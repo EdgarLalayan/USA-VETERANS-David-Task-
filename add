@@ -1,0 +1,88 @@
+def get_data(datas):
+    data = datas
+    myDict = {
+        'NAME OF VETERAN':'',
+        'EOD':'',
+        'BRANCH':'',
+        'CHARACTER OF DISCHARGE':'',
+        'SUBJECT TO COMPENSATION (1.SC)':''
+    }
+
+    data = ''.join(data).replace('\n','|')
+    if 'CHARACTER OF DISCHARG' not in data:
+        return
+    
+    #VETERAN NAME 
+    VETERAN_NAME = data.split('COPY TO|')[1].split('|')[0]
+    myDict['NAME OF VETERAN'] = VETERAN_NAME
+
+    #TABLE 1
+    ACTIVE_DUTY_TABLE = data.split('CHARACTER OF DISCHARGE|')[1].split('LEGACY CODES')[0]
+    if ACTIVE_DUTY_TABLE.count('|') == 4:
+        myDict['EOD'] = ACTIVE_DUTY_TABLE.split('|')[0]
+        myDict['RAD'] = ACTIVE_DUTY_TABLE.split('|')[1]
+        myDict['BRANCH'] = ACTIVE_DUTY_TABLE.split('|')[2]
+        myDict['CHARACTER OF DISCHARGE'] = ACTIVE_DUTY_TABLE.split('|')[3]
+    if ACTIVE_DUTY_TABLE.count('|') > 4:
+        str_count = ACTIVE_DUTY_TABLE.count('|') // 4
+        lst = ACTIVE_DUTY_TABLE.split('|')
+        lst = [i for i in lst if i ]
+        myDict['EOD'] = [lst[eod] for eod in range(0,len(lst),4)  ]
+        myDict['RAD'] = [lst[eod] for eod in range(1,len(lst),4)  ]
+        myDict['BRANCH'] = [lst[eod] for eod in range(2,len(lst),4)  ]
+        myDict['CHARACTER OF DISCHARGE'] = [lst[eod] for eod in range(3,len(lst),4)  ]
+
+    #SUBJECT TO COMPENSATION (1.SC)
+    SUBJECT_AREA = data.split('SUBJECT TO COMPENSATION (1.SC)')[1].split('COMBINED EVALUATION FOR COMPENSATION :')[0]
+    lst = SUBJECT_AREA.split('|')
+    while True:
+        for i in lst:
+            if 'Rating Decision' in i :
+                ind = lst.index('Rating Decision')
+                del lst[ind+1:lst.index('COPY TO')+2]
+                del lst[ind]
+        if 'Rating Decision' not in lst:
+            del lst[0]
+            break
+    new = '|'.join(lst)
+    subject=re.findall("\d{4}\)|.*?\d{2}/\d{2}/\d{4}", new)
+    subject_list_of_dicts = []
+    for row in subject:
+        subDict = {
+        'SystemDC':'',
+        'DecisionDC':'',
+        'DecisionName':'',
+        'DecisionEvaluation':'',
+        'EffDate':''
+        }
+        #
+        try:
+            row = row.split('|')
+            if row[0] =='':
+                del row[0]
+            #print(row[0])
+            if len(row[0]) == 4:
+                subDict['SystemDC'] = row[0]
+                subDict['DecisionDC'] = 'None'
+            if len(row[0]) == 9:
+                subDict['SystemDC'] = row[0].split('-')[0]
+                subDict['DecisionDC'] = row[0].split('-')[1]
+            if row[2].isupper():
+                subDict['DecisionName'] = row[1]+' '+row[2]
+            if row[2].isupper() == False:
+                subDict['DecisionName'] = row[1]
+            subDict['EffDate'] = row[-1].split(' from ')[0]
+            subDict['DecisionEvaluation'] = row[-1].split(' from ')[-1]
+            subject_list_of_dicts.append(subDict)
+        except IndexError:
+            if row[0].isnumeric() == False:
+                continue   
+    myDict['SUBJECT TO COMPENSATION (1.SC)'] = subject_list_of_dicts
+
+        
+
+
+
+    print(myDict)
+
+get_data(datas)
