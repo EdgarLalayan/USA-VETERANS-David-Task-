@@ -156,8 +156,10 @@ def data_to_text(res):
     print(row4)
     row5 = ('EOD        	RAD      	Branch      	Discharge Type')
     print(row5)
-    row6 = (f'{EOD}      {RAD}      {BRANCH}       {DISCHARGE_TYPE}                           ')
-    print(row6)
+    if  isinstance(EOD,list):
+        for row in range(0,len(EOD)):
+            row6 = (f'{EOD[row]}      {RAD[row]}      {BRANCH[row]}       {DISCHARGE_TYPE[row]}                           ')
+            print(row6)
     row7 = ('Conditions: ')
     print(row7)
     max_len = []
