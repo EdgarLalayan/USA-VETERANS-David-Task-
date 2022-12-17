@@ -1,36 +1,83 @@
+import tkinter as tk
+import fitz
+import re
+from IPython.display import display
+
+
 def get_data(datas):
-    data = datas
+    data1 = datas
     myDict = {
         'NAME OF VETERAN':'',
+        'POA':'',
+        'RAD':'',
         'EOD':'',
         'BRANCH':'',
         'CHARACTER OF DISCHARGE':'',
         'SUBJECT TO COMPENSATION (1.SC)':''
+        
     }
 
-    data = ''.join(data).replace('\n','|')
+    data = ''.join(data1).replace('\n','|')
     if 'CHARACTER OF DISCHARG' not in data:
         return
     
-    #VETERAN NAME 
-    VETERAN_NAME = data.split('COPY TO|')[1].split('|')[0]
-    myDict['NAME OF VETERAN'] = VETERAN_NAME
+    #POA
+    s1 = data.split('|COPY TO|')[0].split('|')[-1]
+    s2 = data.split('|COPY TO|')[0].split('|')[-2]
+    if s1.isupper()==True and s2.isupper()==True and s2!='POA':
+        POA = s2+' '+s1
+    else:
+        POA = s1
+    myDict['POA'] = POA
+    #print(POA)
 
-    #TABLE 1
+    #VETERAN NAME 
+    if data.split('COPY TO|')[1].split('|')[0] != 'Static Disability' and data.split('COPY TO|')[1].split('|')[0].isnumeric() !=True:
+        myDict['NAME OF VETERAN'] = data.split('COPY TO|')[1].split('|')[0]
+
+    #print(data.split('COPY TO|'))
+
+    #TABLE 1 ACTIVE DUTY 
     ACTIVE_DUTY_TABLE = data.split('CHARACTER OF DISCHARGE|')[1].split('LEGACY CODES')[0]
-    if ACTIVE_DUTY_TABLE.count('|') == 4:
+    if ACTIVE_DUTY_TABLE.count('|') == 4 or ACTIVE_DUTY_TABLE.count('|') == 5:
         myDict['EOD'] = ACTIVE_DUTY_TABLE.split('|')[0]
         myDict['RAD'] = ACTIVE_DUTY_TABLE.split('|')[1]
-        myDict['BRANCH'] = ACTIVE_DUTY_TABLE.split('|')[2]
-        myDict['CHARACTER OF DISCHARGE'] = ACTIVE_DUTY_TABLE.split('|')[3]
-    if ACTIVE_DUTY_TABLE.count('|') > 4:
-        str_count = ACTIVE_DUTY_TABLE.count('|') // 4
-        lst = ACTIVE_DUTY_TABLE.split('|')
-        lst = [i for i in lst if i ]
-        myDict['EOD'] = [lst[eod] for eod in range(0,len(lst),4)  ]
-        myDict['RAD'] = [lst[eod] for eod in range(1,len(lst),4)  ]
-        myDict['BRANCH'] = [lst[eod] for eod in range(2,len(lst),4)  ]
-        myDict['CHARACTER OF DISCHARGE'] = [lst[eod] for eod in range(3,len(lst),4)  ]
+        myDict['CHARACTER OF DISCHARGE'] = ACTIVE_DUTY_TABLE.split('|')[-2]
+
+        #BRANCH
+        if ACTIVE_DUTY_TABLE.split('|')[3] != ACTIVE_DUTY_TABLE.split('|')[-2]:
+            myDict['BRANCH'] = ACTIVE_DUTY_TABLE.split('|')[2]+' '+ACTIVE_DUTY_TABLE.split('|')[3]
+        else:
+            myDict['BRANCH'] = ACTIVE_DUTY_TABLE.split('|')[2]
+    if ACTIVE_DUTY_TABLE.count('|') > 5:#ALKFMNALKJNFKAJNSFKJANFKJANKFJNAKSJNFKAJSNFKAJSNFKJASN
+        #print(ACTIVE_DUTY_TABLE)
+        subject=re.findall("(\d{2}/\d{2}/\d{4}).", ACTIVE_DUTY_TABLE)
+        for i in subject:
+            ACTIVE_DUTY_TABLE = ACTIVE_DUTY_TABLE.replace(i+'|','')
+        
+        br_and_ch = ACTIVE_DUTY_TABLE.split('|')
+        BRANCH_LIST  = []
+        CHARACTER_list = []
+        for date in  range(0,len(br_and_ch),2):
+            BRANCH_LIST.append(br_and_ch[date])
+        for date in range(1,len(br_and_ch),2):
+            CHARACTER_list.append(br_and_ch[date])      
+        BRANCH_LIST = [i for i in BRANCH_LIST if i ]
+        CHARACTER_list = [i for i in CHARACTER_list if i ]
+        myDict['BRANCH'] = BRANCH_LIST
+        myDict['CHARACTER OF DISCHARGE'] = CHARACTER_list
+
+        RAD_LIST = []
+        EOD_LIST = []
+        for date in  range(0,len(subject),2):
+            EOD_LIST.append(subject[date])
+        for date in range(1,len(subject),2):
+            RAD_LIST.append(subject[date])
+        EOD_LIST = [i for i in EOD_LIST if i ]
+        RAD_LIST = [i for i in RAD_LIST if i ]
+        myDict['EOD'] = EOD_LIST
+        myDict['RAD'] = RAD_LIST
+
 
     #SUBJECT TO COMPENSATION (1.SC)
     SUBJECT_AREA = data.split('SUBJECT TO COMPENSATION (1.SC)')[1].split('COMBINED EVALUATION FOR COMPENSATION :')[0]
@@ -44,6 +91,7 @@ def get_data(datas):
         if 'Rating Decision' not in lst:
             del lst[0]
             break
+    #SUBJECT 
     new = '|'.join(lst)
     subject=re.findall("\d{4}\)|.*?\d{2}/\d{2}/\d{4}", new)
     subject_list_of_dicts = []
@@ -56,11 +104,11 @@ def get_data(datas):
         'EffDate':''
         }
         #
+
         try:
             row = row.split('|')
-            if row[0] =='':
+            if row[0] =='' or row[0] ==' ':
                 del row[0]
-            #print(row[0])
             if len(row[0]) == 4:
                 subDict['SystemDC'] = row[0]
                 subDict['DecisionDC'] = 'None'
@@ -68,9 +116,10 @@ def get_data(datas):
                 subDict['SystemDC'] = row[0].split('-')[0]
                 subDict['DecisionDC'] = row[0].split('-')[1]
             if row[2].isupper():
-                subDict['DecisionName'] = row[1]+' '+row[2]
+                subDict['DecisionName'] = row[1]+' '+row[2][:121]
+
             if row[2].isupper() == False:
-                subDict['DecisionName'] = row[1]
+                subDict['DecisionName'] = row[1][:121]
             subDict['EffDate'] = row[-1].split(' from ')[0]
             subDict['DecisionEvaluation'] = row[-1].split(' from ')[-1]
             subject_list_of_dicts.append(subDict)
@@ -78,11 +127,91 @@ def get_data(datas):
             if row[0].isnumeric() == False:
                 continue   
     myDict['SUBJECT TO COMPENSATION (1.SC)'] = subject_list_of_dicts
+    #display(ACTIVE_DUTY_TABLE)
+    # print('==========================================')
+    # print(myDict)
+    return myDict
 
+
+
+
+
+def data_to_text(res):
+    r = res
+    VETERANE_NAME = r['NAME OF VETERAN']
+    POA = r['POA']
+    EOD = r['EOD']
+    RAD = r['RAD']
+    BRANCH = r['BRANCH']
+    DISCHARGE_TYPE = r['CHARACTER OF DISCHARGE']
+    CODE = r['SUBJECT TO COMPENSATION (1.SC)']
+
+    row1 = (f'Veteran Name:     {VETERANE_NAME}  ')
+    print(row1)
+    row2 = (f'VA File Number:       ')
+    print(row2)
+    row3 = (f'POA:     {POA}')
+    print(row3)
+    row4 = ('Service Dates:')
+    print(row4)
+    row5 = ('EOD        	RAD      	Branch      	Discharge Type')
+    print(row5)
+    row6 = (f'{EOD}      {RAD}      {BRANCH}       {DISCHARGE_TYPE}                           ')
+    print(row6)
+    row7 = ('Conditions: ')
+    print(row7)
+    max_len = []
+
+    for i in CODE:
+        max_len.append(len(i['DecisionName'])) 
+    row8 = ('Code               Description'+max(max_len)*' '+5*' '+'Percentage and Date')
+    print(row8)
+    print()
+    max_s = row8.split('Code               Description')[1]
+    space1= len(max_s)-len('Percentage and Date')
+    for i in CODE:
+        SYSTEM_DC = i['SystemDC']
+        DecisionName = i['DecisionName']
+        Percentage_and_Date = i['EffDate']+' from '+i['DecisionEvaluation']
+        if i['DecisionDC'] != '':
+            SYSTEM_DC = i['SystemDC'] +'-'+i['DecisionDC']
+        if i['DecisionDC'] == 'None':
+            SYSTEM_DC = i['SystemDC']
         
+        if len(i['DecisionName']) > len('Description'):
+            space2 = space1 + len('Description')-len(i['DecisionName'])
+            space2 = (space2)*' '
+            row9 = (f'{SYSTEM_DC}               {DecisionName}{space2}{Percentage_and_Date}')
+            if len(SYSTEM_DC) >4:
+                s = 10*' '
+                row9 = (f'{SYSTEM_DC}{s}{DecisionName}{space2}{Percentage_and_Date}')
+                print(row9)
+            if len(SYSTEM_DC) == 4:
+                s = 15*' '
+                row9 = (f'{SYSTEM_DC}{s}{DecisionName}{space2}{Percentage_and_Date}')
+                print(row9)
 
 
 
-    print(myDict)
+        if len(i['DecisionName']) < len('Description'):
+            space2 = len('Description')-len(i['DecisionName'])
+            space2 = (space2+space1)*' '
+            row9 = (f'{SYSTEM_DC}               {DecisionName}{space2}{Percentage_and_Date}')
+            print(row9)
+        
+    return 'Done!'
 
-get_data(datas)
+if __name__ == '__main__':
+    
+    pdf_name = input('ENTER PDF NAME : > ')
+    pdf = fitz.open(f'{pdf_name}.pdf')
+    datas = []
+    for current_page in range(0,len(pdf)):
+        page = pdf.load_page(current_page)
+        data = page.get_text()
+        data = data.replace('\n','|')
+        datas.append(data) 
+    res = get_data(datas)
+    #display(res)
+    
+    data_to_text(res)
