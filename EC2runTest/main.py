@@ -158,9 +158,14 @@ def subject_get(data):
     while True:
         for i in lst:
             if 'Rating Decision' in i :
-                ind = lst.index('Rating Decision')
-                del lst[ind+1:lst.index('COPY TO')+2]
-                del lst[ind]
+                ind1 = lst.index('Rating Decision')
+                ind2 = lst.index('COPY TO')
+                if 'from'  in lst[ind2+1]:
+                    del lst[ind1:ind2+1] 
+                    continue
+                if 'from' not in lst[ind2+1]:
+                    del lst[ind1:ind2+2] 
+                    continue
         if 'Rating Decision' not in lst:
             del lst[0]
             break
