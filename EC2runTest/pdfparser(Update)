@@ -197,8 +197,18 @@ def subject_get(data):
             lst.remove(i)
     while True:
         if len(lst)==0:
-            res['Description'] = res['Description'][:121].lstrip().rstrip()
+            res['Description'] = res['Description'][:257].lstrip().rstrip()
             res1 = res.copy()
+            #LEFT OR RIGHT
+            if ('LEFT' in res1['Description'] and 'RIGHT' in res1['Description']) or ('Left' in res1['Description'] and 'Right' in res1['Description']) :
+                if res1['Description'].index('LEFT') < res1['Description'].index('RIGHT'):
+                    res1['Left_or_Right_KW'] = 'LEFT'
+                if res1['Description'].index('LEFT') > res1['Description'].index('RIGHT'):
+                    res1['Left_or_Right_KW'] = 'RIGHT'
+            if 'LEFT' in res1['Description'] or 'Left' in res1['Description']:
+                res1['Left_or_Right_KW'] = 'LEFT'
+            if 'RIGHT' in res1['Description'] or 'Right' in res1['Description']:
+                res1['Left_or_Right_KW'] = 'RIGHT'
             list_of_dict.append(res1)
             break
         if lst[0].strip()=='':
@@ -206,7 +216,7 @@ def subject_get(data):
             continue
 
         if (lst[0][:4].isnumeric() and len(lst[0].strip()) == 4 or lst[0][:4].isnumeric() and len(lst[0].strip()) == 9) and res['Code']!='':
-            res['Description'] = res['Description'][:121].lstrip().rstrip()
+            res['Description'] = res['Description'][:257].lstrip().rstrip()
             res1 = res.copy()
             list_of_dict.append(res1)
             res['Code'] = lst[0]
@@ -215,12 +225,13 @@ def subject_get(data):
             c+=1
             del lst[0]
             continue
-        
+        #Code
         if lst[0][:4].isnumeric() and len(lst[0].strip()) == 4 or lst[0][:4].isnumeric() and len(lst[0].strip()) == 9 :#start
             res['Code']=lst[0]
             del lst[0]
             c+=1
             continue
+        #Description
         if lst[0].lstrip().split()[0].isupper() == True and res['Description']=='':
             res['Description'] = lst[0]
             del lst[0]
@@ -231,11 +242,13 @@ def subject_get(data):
             del lst[0]
             c+=1
             continue
+        #First percent
         if 'from' in lst[0] and res['PercentageDate']=='':
             res['PercentageDate'] = lst[0].lstrip().rstrip()
             del lst[0]
             c+=1
             continue
+        #Second percent
         if 'from' in lst[0] and res['PercentageDate']!='':
             res['PercentageDate'] = res['PercentageDate']+' '+lst[0].lstrip().rstrip()
             del lst[0]
@@ -255,24 +268,56 @@ def subject_get(data):
         row = d['PercentageDate'].split()
         while True:
             if len(row)==0:
-                date_lst.append(date_perc.copy())
+                if date_perc['percent'] !='None':
+                    date_lst.append(date_perc.copy())
+                    break
                 break
             if date_perc['date'] != 'None' and date_perc['percent'] != 'None':
                 date_lst.append(date_perc.copy())
+                if 'End_Date' in date_perc.keys():
+                    date_perc['End_Date'] = 'None'
                 date_perc['date'] = 'None'
                 date_perc['percent'] = 'None'
+                if len(row) == 0:
+                    break
                 continue
 
             if '%' in row[0]:
                 date_perc['percent']=row[0].replace('%','')
                 del row[0]
                 continue
+            if '/' in row[0] and 'to' in row:
+                to_ind = row.index('to')
+                date_perc['date'] = row[to_ind-1]
+                date_perc['End_Date'] = row[to_ind+1]
+                del row[0]
+                del row[to_ind]
+                continue
+
             if  '/' in row[0]:
                 date_perc['date'] = row[0]
                 del row[0]
                 continue
             del row[0]
         d['PercentageDate']=date_lst
+    
+    #LEFT OR RIGHT
+    for row in list_of_dict:
+        desc = row['Description']
+        if ('LEFT' in desc and 'RIGHT' in desc) or ('Left' in desc and 'Right' in desc) :
+            if desc.index('LEFT') < desc.index('RIGHT'):
+                row['Left_or_Right_KW'] = 'LEFT'
+                continue
+            if desc.index('LEFT') > desc.index('RIGHT'):
+                row['Left_or_Right_KW'] = 'RIGHT'
+                continue
+        if 'LEFT' in desc or 'Left' in desc:
+            row['Left_or_Right_KW'] = 'LEFT'
+            continue
+        if 'RIGHT' in desc or 'Right' in desc:
+            row['Left_or_Right_KW'] = 'RIGHT'
+            continue
+        print(row)
 
     return list_of_dict
 
@@ -303,10 +348,14 @@ def noCompesation(data):
     lst = data.split('|')
     lst = [i for i in lst if i != ' ' and i != '']
     #start no comp area
+
     while True:
-        if 'NOT SERVICE CONNECTED' in lst[0]:
-            del lst[0]
-            break
+        try:# if NOT SERVICE CONNECTED not in  data:return None
+            if 'NOT SERVICE CONNECTED' in lst[0]:
+                del lst[0]
+                break
+        except IndexError:
+            return 'None'
         del lst[0]
 
     caspio = rating_get(data)['CLIENT_CASPIO_FK']
@@ -417,3 +466,7 @@ if __name__ == '__main__':
         # pretty-print the JSON data
         print(json.dumps(d, indent=2))
 
+
+# data = pdf_to_text('info1part3.txt')
+# #print(json.dumps(subject_get(data), indent=2))
+# (subject_get(data))
