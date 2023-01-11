@@ -355,7 +355,7 @@ def noCompesation(data):
                 del lst[0]
                 break
         except IndexError:
-            return 'None'
+            return list_of_dict
         del lst[0]
 
     caspio = rating_get(data)['CLIENT_CASPIO_FK']
@@ -467,6 +467,4 @@ if __name__ == '__main__':
         print(json.dumps(d, indent=2))
 
 
-# data = pdf_to_text('info1part3.txt')
-# #print(json.dumps(subject_get(data), indent=2))
-# (subject_get(data))
+
