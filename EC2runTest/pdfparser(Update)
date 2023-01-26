@@ -317,7 +317,6 @@ def subject_get(data):
         if 'RIGHT' in desc or 'Right' in desc:
             row['Left_or_Right_KW'] = 'RIGHT'
             continue
-        print(row)
 
     return list_of_dict
 
@@ -421,6 +420,23 @@ def noCompesation(data):
                 res['Description'] = res['Description']+' '+lst[0].lstrip().rstrip()
             del lst[0]
             continue
+    #LEFT OR RIGHT
+    for row in list_of_dict:
+        desc = row['Description']
+        if ('LEFT' in desc and 'RIGHT' in desc) or ('Left' in desc and 'Right' in desc) :
+            if desc.index('LEFT') < desc.index('RIGHT'):
+                row['Left_or_Right_KW'] = 'LEFT'
+                continue
+            if desc.index('LEFT') > desc.index('RIGHT'):
+                row['Left_or_Right_KW'] = 'RIGHT'
+                continue
+        if 'LEFT' in desc or 'Left' in desc:
+            row['Left_or_Right_KW'] = 'LEFT'
+            continue
+        if 'RIGHT' in desc or 'Right' in desc:
+            row['Left_or_Right_KW'] = 'RIGHT'
+            continue
+
     return list_of_dict
 
 
@@ -467,4 +483,6 @@ if __name__ == '__main__':
         print(json.dumps(d, indent=2))
 
 
-
+# data = pdf_to_text('info1part4.txt')
+# print(json.dumps(subject_get(data), indent=2))
+# subject_get(data)
