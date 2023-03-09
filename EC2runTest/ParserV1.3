@@ -84,34 +84,37 @@ def rating_get(data):
     
 
     while True:
-        if len(lst) ==0:
+        try :
+            if len(lst) ==0:
+                break
+            #VETERANE NAME
+            if 'NAME OF VETERAN' in lst[0] and 'VA FILE NUMBER' not in lst[1]:
+                activeDutydict['Veterane_name'] = lst[1].rstrip()
+                if 'VA FILE NUMBER' not in lst[2]:
+                    activeDutydict['Veterane_name'] = activeDutydict['Veterane_name']+' '+lst[2].rstrip()
+                del lst[0]
+                continue
+            #VA NUMBER
+            if 'VA FILE NUMBER' in lst[0] and 'SOCIAL SECURITY NR' not in lst[1]:
+                activeDutydict['Va_File_Number'] = lst[1]
+                del lst[0]
+                continue
+            #SOCIAL NUMBER
+            if 'SOCIAL SECURITY NR' in lst[0] and 'POA' not in lst[1]:
+                activeDutydict['SOCIAL SECURITY NR'] = lst[1]
+                del lst[0]
+                continue
+            #POA
+            if 'POA' in lst[0] and 'COPY TO' not in lst[1]:
+                activeDutydict['POA'] = lst[1].rstrip()
+                if 'COPY TO' not in lst[2]:
+                    activeDutydict['POA'] = activeDutydict['POA'] + ' ' + lst[2].rstrip()
+                if 'COPY TO' not in lst[3]:
+                    activeDutydict['POA'] = activeDutydict['POA'] + ' ' + lst[3].rstrip()
+            
+            del lst[0]
+        except IndexError:
             break
-        #VETERANE NAME
-        if 'NAME OF VETERAN' in lst[0] and 'VA FILE NUMBER' not in lst[1]:
-            activeDutydict['Veterane_name'] = lst[1].rstrip()
-            if 'VA FILE NUMBER' not in lst[2]:
-                activeDutydict['Veterane_name'] = activeDutydict['Veterane_name']+' '+lst[2].rstrip()
-            del lst[0]
-            continue
-        #VA NUMBER
-        if 'VA FILE NUMBER' in lst[0] and 'SOCIAL SECURITY NR' not in lst[1]:
-            activeDutydict['Va_File_Number'] = lst[1]
-            del lst[0]
-            continue
-        #SOCIAL NUMBER
-        if 'SOCIAL SECURITY NR' in lst[0] and 'POA' not in lst[1]:
-            activeDutydict['SOCIAL SECURITY NR'] = lst[1]
-            del lst[0]
-            continue
-        #POA
-        if 'POA' in lst[0] and 'COPY TO' not in lst[1]:
-            activeDutydict['POA'] = lst[1].rstrip()
-            if 'COPY TO' not in lst[2]:
-                activeDutydict['POA'] = activeDutydict['POA'] + ' ' + lst[2].rstrip()
-            if 'COPY TO' not in lst[3]:
-                activeDutydict['POA'] = activeDutydict['POA'] + ' ' + lst[3].rstrip()
-        
-        del lst[0]
 
     return activeDutydict  
 
@@ -597,8 +600,6 @@ def create_data_for_json(rating_res,active_res,subject_res,no_compes):
 
 
 
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--argument', required=False)
@@ -624,9 +625,11 @@ if __name__ == '__main__':
 #print(json.dumps(rating_get(data), indent=2))
 #print(json.dumps(subject_get(data), indent=2))
 
+# data = pdf_to_text('17.pdf')
+# print(json.dumps(rating_get(data), indent=2))
 
 
-#pdf_to_b64('1.pdf')
+
 
 
 
