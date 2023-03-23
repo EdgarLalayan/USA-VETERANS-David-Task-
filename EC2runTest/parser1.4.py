@@ -65,26 +65,27 @@ def rating_get(data):
             CLIENT_CASPIO_FK = lst[-1]
             activeDutydict['CLIENT_CASPIO_FK'] = CLIENT_CASPIO_FK
         
-        while CLIENT_CASPIO_FK in lst:
-            lst.remove(CLIENT_CASPIO_FK) 
+
 
 
     if 'Rating Decision'  in lst:
-            #get CLIENT_CASPIO_FK
+        #get CLIENT_CASPIO_FK
+        if 'COPY TO' not in  lst[-1] and '/' not in lst[-1]:   
             CLIENT_CASPIO_FK = lst[-1]
-            if 'COPY TO' not in  CLIENT_CASPIO_FK:   
-                activeDutydict['CLIENT_CASPIO_FK'] = CLIENT_CASPIO_FK
-                while CLIENT_CASPIO_FK in lst:
-                    lst.remove(CLIENT_CASPIO_FK)
-            #get HEADER DATE
-            for i in lst:
-                if 'Page' in i :
-                    h = lst.index(i)
-                    h = lst[h+1]
-                    if h[0].isnumeric() and '/' in h:
-                        activeDutydict['HEADER_DATE'] = h.strip()
-    
-
+            activeDutydict['CLIENT_CASPIO_FK'] = lst[-1]
+        if 'COPY TO' not in  lst[-1] and '/'  in lst[-1]:   
+            CLIENT_CASPIO_FK = lst[-2]
+            activeDutydict['CLIENT_CASPIO_FK'] = CLIENT_CASPIO_FK
+            activeDutydict['HEADER_DATE'] = lst[-1]
+        #get HEADER DATE
+        for i in lst:
+            if 'Page' in i :
+                h = lst.index(i)
+                h = lst[h+1]
+                if h[0].isnumeric() and '/' in h:
+                    activeDutydict['HEADER_DATE'] = h.strip()
+    #remove ccfk 
+    lst = [i for i in lst if CLIENT_CASPIO_FK not in i]
     while True:
         try :
             if len(lst) ==0:
@@ -107,11 +108,11 @@ def rating_get(data):
                 del lst[0]
                 continue
             #POA
-            if 'POA' in lst[0] and 'COPY TO' not in lst[1]:
+            if 'POA' in lst[0] and 'COPY TO' not in lst[1] and '/' not in lst[1]:
                 activeDutydict['POA'] = lst[1].rstrip()
-                if 'COPY TO' not in lst[2]:
+                if 'COPY TO' not in lst[2] and '/' not in lst[2] :
                     activeDutydict['POA'] = activeDutydict['POA'] + ' ' + lst[2].rstrip()
-                if 'COPY TO' not in lst[3]:
+                if 'COPY TO' not in lst[3] and '/' not in lst[3]:
                     activeDutydict['POA'] = activeDutydict['POA'] + ' ' + lst[3].rstrip()
             
             del lst[0]
@@ -636,9 +637,9 @@ if __name__ == '__main__':
 
 
 
-#data = pdf_to_text('7.pdf')
-#print(data)
-#print(json.dumps(rating_get(data), indent=2))
-#print(json.dumps(noCompesation(data), indent=2))
-#print(json.dumps(active_get(data), indent=2))
-#print(json.dumps(subject_get(data), indent=2))
+# data = pdf_to_text('/Users/edgarlalayan/Desktop/Veteran /parser1.4/No SC/2NKTLYHC.pdf')
+# print(data)
+# print(json.dumps(rating_get(data), indent=2))
+# print(json.dumps(noCompesation(data), indent=2))
+# print(json.dumps(active_get(data), indent=2))
+# print(json.dumps(subject_get(data), indent=2))
