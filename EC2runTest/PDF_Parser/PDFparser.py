@@ -835,8 +835,8 @@ class PDFParser:
         if text == True:
             return data
         grands = {
-            "SMCKGrants":False,
-            "DEAGrants":False      
+            "SMCKGrants":[],
+            "DEAGrants":[]      
         }
         for row in data:
             match_name = re.search(r'(?i)(?:(?:evaluation\s*for|Entitlement\s*to\s*an\s*earlier\s*effective\s*date\s*for\s*service\s*connection\s*for|The\s*previous\s*denial\s*of\s*service\s*connection\s*for)|(?:The\s*claim\s*for\s*service\s*connection\s*for)|(?:Evaluation\s*of)|(?:A\s*decision\s*on\s*entitlement\s*to\s*compensation\s*for)|(?:Service\s*connection\s*for))\s+(.+?)\s+(?:is\s*confirmed|as\s*secondary\s*to|remains\s*denied\s*b|which\s*is\s*currently|is\s*granted|is\s*denied|is\s*deferred)', row)
@@ -857,11 +857,13 @@ class PDFParser:
             if match_date:
                 res['EffDate'] = match_date.group()
             
-            #grands
+            #grants
             if "Entitlement to special monthly compensation based on loss of use of a creative organ is granted from" in row:
-                grands['SMCKGrants'] = True
+                match_date = re.search(r'\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}\b', row)
+                grands['SMCKGrants'].append(match_date.group())
             elif "Educational Assistance based on permanent and total disability status is established from" in row:
-                grands['DEAGrants'] = True
+                match_date = re.search(r'\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}\b', row)
+                grands['DEAGrants'].append(match_date.group())
             outcomes = []
             #outcome
             #EEDD 
@@ -907,9 +909,10 @@ class PDFParser:
                 },
                 'Compensation Information': {
                     'Compensation': subject_res,
-                    'No Compensation': no_compes
+                    'No Compensation': no_compes,
+                    'Deferred Issues': deferredIssues,
+
                 },
-                'Deferred Issues': deferredIssues,
                 'Decision': get_Decision[0],
                 'SMCKGrants':get_Decision[1]['SMCKGrants'],
                 'DEAGrants':get_Decision[1]['DEAGrants']
@@ -920,8 +923,6 @@ class PDFParser:
 
 
 if __name__ == '__main__':
-
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--argument', required=False)
 
@@ -929,15 +930,11 @@ if __name__ == '__main__':
     argument_value = args.argument
     parserPDF = PDFParser(argument_value)
     
-    
+    #TEST
     # path = '/Users/edgarlalayan/Desktop/CASPIO/Veteran /parser1.5/RatingDecisionExtractProject/SampleRatingDecisions/RatingDecision--04-13-23-4HPGK2FV.pdf'
     # parser  = PDFParser(path)
+    # parserPDF = PDFParser(path)
     # text = parser.get_text(path)
     # res = parser._get_Decision(text)
 
 
-
-#CHECK WITH EKATERINA
-#path = '/Users/edgarlalayan/Desktop/CASPIO/Veteran /parser1.5/McKeown Law -- RatingDecisionExtract Project/Sample RatingDecisions/RatingDecision - 02-06-2023 - a.pdf'
-#A difference
-#path = '/Users/edgarlalayan/Desktop/CASPIO/Veteran /parser1.5/McKeown Law -- RatingDecisionExtract Project/Sample RatingDecisions/RatingDecision - 3-10-2023 - UVN6JWA5.pdf'
